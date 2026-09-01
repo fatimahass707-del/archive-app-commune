@@ -1,5 +1,3 @@
-Here is your updated, fully enhanced, and professional **`README.md`** written in English. It integrates all your completed features (Socket.io real-time notifications, PWA support, ZIP bulk exports, activity audit logs, automated backups) and your full author attribution.
-
 ```markdown
 # 📂 Archive App – Electronic Archiving System for the Commune
 
