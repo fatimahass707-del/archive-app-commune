@@ -139,15 +139,6 @@ Open your browser and navigate to `http://localhost:5173`.
 
 ---
 
-## 💡 Future Roadmap
-
-* [ ] **OCR Integration:** Extract searchable text from scanned PDFs/images using `Tesseract.js`.
-* [ ] **Cloud Storage Sync:** Add support for S3/MinIO cloud object storage.
-* [ ] **PDF Export Engine:** Generate downloadable PDF reports for document lists and audit logs.
-* [ ] **Document Expiration Alerts:** Automatic warnings for legal contracts or document renewal dates.
-
----
-
 ## 📜 Intellectual Property & Copyright
 
 All intellectual property rights, source code, architecture, and design concepts for this application belong exclusively to:
