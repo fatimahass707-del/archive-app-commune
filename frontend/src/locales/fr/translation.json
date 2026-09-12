@@ -246,5 +246,13 @@
   "log.documentUpdated": "Mis à jour le document N° {{code}} ({{title}})",
   "log.documentTrashed": "Déplacé le document N° {{code}} ({{title}}) dans la corbeille",
   "log.documentRestored": "Restauré le document N° {{code}} ({{title}}) depuis la corbeille",
-  "log.documentPermanentlyDeleted": "Supprimé définitivement le document N° {{code}} ({{title}})"
+  "log.documentPermanentlyDeleted": "Supprimé définitivement le document N° {{code}} ({{title}})",
+  "captureWithCamera": "Capturer avec la caméra",
+  "cameraModalTitle": "Capture photo",
+  "capture": "Capturer",
+  "retake": "Reprendre",
+  "useThisPhoto": "Utiliser cette photo",
+  "cameraAccessDenied": "Accès à la caméra refusé, vous pouvez importer le fichier manuellement",
+  "scannerLoading": "Chargement de l'outil de numérisation...",
+  "scannerFallbackHint": "Bords du document non détectés clairement, l'image originale a été utilisée"
 }

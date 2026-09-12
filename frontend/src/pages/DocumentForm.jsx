@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axios";
 import { useTranslation } from "react-i18next";
@@ -21,6 +21,177 @@ export default function DocumentForm() {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraError, setCameraError] = useState("");
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [isScannerLoading, setIsScannerLoading] = useState(false);
+  const [scannerHint, setScannerHint] = useState("");
+  
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const scannerRef = useRef(null);
+  const scanIntervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    };
+  }, [cameraStream]);
+
+  const startCameraAndScanner = async () => {
+    try {
+      setCameraError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      setCameraError(t("cameraAccessDenied"));
+    }
+  };
+
+  const startScanningLoop = () => {
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    scanIntervalRef.current = setInterval(() => {
+      if (videoRef.current && canvasRef.current && scannerRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const context = canvas.getContext("2d");
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          try {
+            const resultCanvas = scannerRef.current.highlightPaper(canvas);
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(resultCanvas, 0, 0);
+          } catch (err) {
+            // ignore highlight errors
+          }
+        }
+      }
+    }, 100);
+  };
+
+  const openCamera = () => {
+    setIsCameraOpen(true);
+    setCapturedImage(null);
+    setCameraError("");
+    setScannerHint("");
+    setIsScannerLoading(true);
+
+    if (!window.cv || !window.jscanify) {
+      const loadScripts = () => {
+        return new Promise((resolve) => {
+          let loadedCount = 0;
+          const checkDone = () => {
+            loadedCount++;
+            if (loadedCount === 2) resolve();
+          };
+          
+          if (!window.cv) {
+            const cvScript = document.createElement("script");
+            cvScript.src = "https://docs.opencv.org/4.7.0/opencv.js";
+            cvScript.async = true;
+            cvScript.onload = checkDone;
+            document.body.appendChild(cvScript);
+          } else {
+            checkDone();
+          }
+          
+          if (!window.jscanify) {
+            const jsScript = document.createElement("script");
+            jsScript.src = "https://cdn.jsdelivr.net/gh/ColonelParrot/jscanify@master/src/jscanify.min.js";
+            jsScript.async = true;
+            jsScript.onload = checkDone;
+            document.body.appendChild(jsScript);
+          } else {
+            checkDone();
+          }
+        });
+      };
+
+      loadScripts().then(() => {
+        const checkCv = setInterval(() => {
+          if (window.cv && window.cv.Mat && window.jscanify) {
+            clearInterval(checkCv);
+            scannerRef.current = new window.jscanify();
+            setIsScannerLoading(false);
+            startCameraAndScanner();
+          }
+        }, 100);
+      });
+    } else {
+      if (!scannerRef.current) scannerRef.current = new window.jscanify();
+      setIsScannerLoading(false);
+      startCameraAndScanner();
+    }
+  };
+
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    setCameraStream(null);
+    setIsCameraOpen(false);
+    setCapturedImage(null);
+    setScannerHint("");
+  };
+
+  const captureImage = () => {
+    if (videoRef.current && scannerRef.current) {
+      const video = videoRef.current;
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = video.videoWidth;
+      tempCanvas.height = video.videoHeight;
+      const ctx = tempCanvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+      let finalCanvas = tempCanvas;
+      
+      try {
+        const extracted = scannerRef.current.extractPaper(tempCanvas, tempCanvas.width, tempCanvas.height);
+        if (extracted) {
+           const enhancedCanvas = document.createElement("canvas");
+           enhancedCanvas.width = extracted.width;
+           enhancedCanvas.height = extracted.height;
+           const enhancedCtx = enhancedCanvas.getContext("2d");
+           enhancedCtx.filter = "contrast(1.2) brightness(1.1)";
+           enhancedCtx.drawImage(extracted, 0, 0);
+           finalCanvas = enhancedCanvas;
+           setScannerHint("");
+        } else {
+           setScannerHint(t("scannerFallbackHint"));
+        }
+      } catch (err) {
+         console.warn("jscanify extraction failed:", err);
+         setScannerHint(t("scannerFallbackHint"));
+      }
+      
+      setCapturedImage(finalCanvas.toDataURL("image/jpeg"));
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    }
+  };
+
+  const confirmImage = () => {
+    if (capturedImage) {
+      fetch(capturedImage)
+        .then(res => res.blob())
+        .then(blob => {
+          const newFile = new File([blob], `scan-${Date.now()}.jpg`, { type: "image/jpeg" });
+          setFile(newFile);
+          closeCamera();
+        });
+    }
+  };
 
   useEffect(() => {
     api.get("/categories").then((res) => setCategories(res.data));
@@ -130,7 +301,17 @@ export default function DocumentForm() {
 
             <div className="form-field full">
               <label>{t("file")} {isEdit ? `(${t("fileEditNote")})` : ""}</label>
-              <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" onChange={(e) => setFile(e.target.files[0])} />
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" onChange={(e) => setFile(e.target.files[0])} />
+                <button type="button" className="btn btn-outline" onClick={openCamera}>
+                  {t("captureWithCamera")}
+                </button>
+              </div>
+              {file && (
+                <div style={{ marginTop: "8px", fontSize: "0.9em", color: "var(--text-secondary, #666)" }}>
+                  {file.name}
+                </div>
+              )}
             </div>
           </div>
 
@@ -144,6 +325,92 @@ export default function DocumentForm() {
           </div>
         </form>
       </div>
+
+      {isCameraOpen && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 1000,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <div
+            className="modal-box card"
+            style={{
+              backgroundColor: "var(--bg-card, #fff)",
+              padding: "20px",
+              borderRadius: "8px",
+              maxWidth: "500px",
+              width: "100%",
+              margin: "20px",
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: "15px" }}>{t("cameraModalTitle")}</h3>
+            
+            {cameraError ? (
+              <div className="error-msg">{cameraError}</div>
+            ) : isScannerLoading ? (
+              <div style={{ padding: "40px", textAlign: "center", color: "var(--text-secondary)" }}>
+                {t("scannerLoading")}
+              </div>
+            ) : capturedImage ? (
+              <div>
+                {scannerHint && <div style={{ marginBottom: "10px", fontSize: "0.9em", color: "var(--text-secondary)" }}>{scannerHint}</div>}
+                <img src={capturedImage} alt="Captured" style={{ width: "100%", borderRadius: "4px" }} />
+              </div>
+            ) : (
+              <div style={{ position: "relative" }}>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  style={{ display: "none" }}
+                  onCanPlay={() => {
+                    videoRef.current?.play();
+                    startScanningLoop();
+                  }}
+                />
+                <canvas 
+                  ref={canvasRef} 
+                  style={{ width: "100%", borderRadius: "4px", backgroundColor: "#000" }} 
+                />
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "15px", justifyContent: "flex-end" }}>
+              {capturedImage ? (
+                <>
+                  <button type="button" className="btn btn-outline" onClick={() => setCapturedImage(null)}>
+                    {t("retake")}
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={confirmImage}>
+                    {t("useThisPhoto")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="btn btn-outline" onClick={closeCamera}>
+                    {t("cancel")}
+                  </button>
+                  {!cameraError && (
+                    <button type="button" className="btn btn-primary" onClick={captureImage}>
+                      {t("capture")}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

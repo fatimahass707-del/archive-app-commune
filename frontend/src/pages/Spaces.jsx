@@ -26,18 +26,19 @@ export default function Spaces() {
       setCategories(catRes.data);
       setAllUsers(userRes.data);
 
-      // جلب الأعضاء لكل صنف ومساحة
+      // جلب الأعضاء لجميع الأصناف دفعة واحدة لتجنب الضغط على الخادم
       const membersData = {};
-      await Promise.all(
-        catRes.data.map(async (cat) => {
-          try {
-            const mRes = await api.get(`/categories/${cat.id}/members`);
-            membersData[cat.id] = mRes.data;
-          } catch (e) {
-            membersData[cat.id] = [];
+      try {
+        const mRes = await api.get("/categories/members/all");
+        mRes.data.forEach((member) => {
+          if (!membersData[member.category_id]) {
+            membersData[member.category_id] = [];
           }
-        })
-      );
+          membersData[member.category_id].push(member);
+        });
+      } catch (e) {
+        console.error("Failed to fetch all members", e);
+      }
       setMembersMap(membersData);
     } catch (err) {
       console.error(err);

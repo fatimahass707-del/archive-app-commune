@@ -44,7 +44,7 @@ export default function DocumentDetail() {
       alert(t("printLabelPopupBlocked"));
       return;
     }
-    
+
     printWindow.document.write(`
       <html>
         <head>
@@ -130,7 +130,7 @@ export default function DocumentDetail() {
   function handleDownload() {
     const token = localStorage.getItem("token");
     const downloadUrl = `${API_BASE_URL}/documents/${id}/download?token=${token}`;
-    
+
     // Trigger download via blob with axios auth header
     api.get(`/documents/${id}/download`, { responseType: "blob" }).then((res) => {
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -162,7 +162,8 @@ export default function DocumentDetail() {
   if (loadError) return <div className="empty-state" style={{ color: "var(--color-danger)" }}>⚠️ {t("notFound")}</div>;
   if (!doc) return <div className="empty-state">{t("loading")}</div>;
 
-  const fileUrl = doc.file_path ? `${SERVER_BASE_URL}${doc.file_path}` : null;
+  // ✅ السطر الصحيح
+  const fileUrl = doc.file_path ? `${SERVER_BASE_URL}/${doc.file_path.replace(/^\//, '')}` : null;
   const isImage = doc.file_path && /\.(png|jpe?g)$/i.test(doc.file_path);
   const isPdf = doc.file_path && /\.pdf$/i.test(doc.file_path);
 
@@ -301,14 +302,14 @@ export default function DocumentDetail() {
 
       {versions.length > 0 && (
         <div className="card" style={{ marginTop: 20 }}>
-          <div 
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} 
+          <div
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
             onClick={() => setShowVersions(!showVersions)}
           >
             <h3 style={{ fontSize: 16, margin: 0 }}>{t("previousVersions")} ({versions.length})</h3>
             <span>{showVersions ? "▲" : "▼"}</span>
           </div>
-          
+
           {showVersions && (
             <div style={{ marginTop: 16 }}>
               <table className="table" style={{ width: "100%" }}>
@@ -327,8 +328,8 @@ export default function DocumentDetail() {
                       <td>{v.uploaded_by_name}</td>
                       <td>{new Date(v.created_at).toLocaleString("fr-FR")}</td>
                       <td>
-                        <button 
-                          className="btn btn-outline" 
+                        <button
+                          className="btn btn-outline"
                           style={{ padding: "4px 8px", fontSize: 12 }}
                           onClick={() => handleDownloadVersion(v.id, v.file_original_name)}
                         >

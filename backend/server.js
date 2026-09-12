@@ -48,22 +48,21 @@ app.use(compression());
 
 // في بيئة التطوير: السماح لأي منفذ على localhost (dev server, preview, إلخ)
 // في بيئة الإنتاج: السماح فقط للعناوين المحددة في FRONTEND_URL
-const isProduction = process.env.NODE_ENV === "production";
-const corsOrigin = isProduction
-  ? frontendUrls
-  : (origin, callback) => {
-      // السماح لأي طلب بدون origin (مثل Postman أو curl) أو أي localhost
-      if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    };
+const corsOrigin = (origin, callback) => {
+  if (!origin) {
+    return callback(null, true);
+  }
+  if (frontendUrls.includes(origin)) {
+    return callback(null, true);
+  }
+  callback(new Error("Not allowed by CORS"));
+};
 
 app.use(cors({
   origin: corsOrigin,
   credentials: true,
 }));
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -120,7 +119,7 @@ setIoInstance(io);
 
 io.on("connection", (socket) => {
   console.log(`[Socket] User connected: ${socket.id}`);
-  
+
   socket.on("join_user_room", (userId) => {
     socket.join(`user_${userId}`);
     console.log(`[Socket] User ${userId} joined room: user_${userId}`);

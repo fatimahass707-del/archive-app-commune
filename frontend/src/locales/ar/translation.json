@@ -246,5 +246,13 @@
   "log.documentUpdated": "عدّل الوثيقة رقم {{code}} ({{title}})",
   "log.documentTrashed": "نقل الوثيقة رقم {{code}} ({{title}}) لسلة المحذوفات",
   "log.documentRestored": "استرجع الوثيقة رقم {{code}} ({{title}}) من سلة المحذوفات",
-  "log.documentPermanentlyDeleted": "حذف الوثيقة نهائياً رقم {{code}} ({{title}})"
+  "log.documentPermanentlyDeleted": "حذف الوثيقة نهائياً رقم {{code}} ({{title}})",
+  "captureWithCamera": "التقاط بالكاميرا",
+  "cameraModalTitle": "التقاط صورة",
+  "capture": "التقاط",
+  "retake": "إعادة الالتقاط",
+  "useThisPhoto": "استخدام هذه الصورة",
+  "cameraAccessDenied": "تعذر الوصول إلى الكاميرا، يمكنك إرفاق الملف يدوياً",
+  "scannerLoading": "جاري تحميل أداة المسح...",
+  "scannerFallbackHint": "لم يتم اكتشاف حواف الوثيقة بوضوح، تم استخدام الصورة الأصلية"
 }

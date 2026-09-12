@@ -7,6 +7,7 @@ const {
   deleteCategory,
 } = require("../controllers/categories.controller");
 const {
+  getAllCategoryMembers,
   getCategoryMembers,
   addCategoryMember,
   removeCategoryMember,
@@ -22,6 +23,7 @@ router.put("/:id", requireRole("admin"), updateCategory);
 router.delete("/:id", requireRole("admin"), deleteCategory);
 
 // مسارات أعضاء ومسؤولي المساحة
+router.get("/members/all", getAllCategoryMembers); // جلب جميع الأعضاء (يجب أن يكون قبل :id لتجنب التعارض)
 router.get("/:id/members", requireSpaceAccess, getCategoryMembers);
 router.post("/:id/members", requireSpaceLeadOrAdmin, addCategoryMember);
 router.delete("/:id/members/:userId", requireSpaceLeadOrAdmin, removeCategoryMember);

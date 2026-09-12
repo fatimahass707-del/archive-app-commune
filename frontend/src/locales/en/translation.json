@@ -246,5 +246,13 @@
   "log.documentUpdated": "Updated document No. {{code}} ({{title}})",
   "log.documentTrashed": "Moved document No. {{code}} ({{title}}) to trash",
   "log.documentRestored": "Restored document No. {{code}} ({{title}}) from trash",
-  "log.documentPermanentlyDeleted": "Permanently deleted document No. {{code}} ({{title}})"
+  "log.documentPermanentlyDeleted": "Permanently deleted document No. {{code}} ({{title}})",
+  "captureWithCamera": "Capture with Camera",
+  "cameraModalTitle": "Capture Photo",
+  "capture": "Capture",
+  "retake": "Retake",
+  "useThisPhoto": "Use this photo",
+  "cameraAccessDenied": "Camera access denied, you can upload the file manually",
+  "scannerLoading": "Loading scanning tool...",
+  "scannerFallbackHint": "Document edges not clearly detected, using original image"
 }

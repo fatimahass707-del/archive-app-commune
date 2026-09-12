@@ -14,6 +14,9 @@ function verifyToken(req, res, next) {
     req.user = decoded; // { id, role, full_name }
     next();
   } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
     return res.status(403).json({ message: "الجلسة منتهية أو غير صالحة، الرجاء تسجيل الدخول من جديد" });
   }
 }

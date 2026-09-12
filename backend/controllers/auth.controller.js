@@ -130,6 +130,9 @@ async function refreshToken(req, res) {
       { expiresIn: "15m" }
     );
 
+    // Rotate refresh token and set new cookie
+    await createAndSendRefreshToken(user, res);
+
     res.json({ token: newToken });
   } catch (err) {
     console.error(err);

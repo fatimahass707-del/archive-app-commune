@@ -108,7 +108,25 @@ async function removeCategoryMember(req, res) {
   }
 }
 
+// جلب جميع أعضاء المساحات لتجنب استدعاءات API المتكررة
+async function getAllCategoryMembers(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT cm.id, cm.category_id, cm.user_id, cm.role_in_space, cm.assigned_at,
+              u.full_name, u.email, u.department, u.role
+       FROM category_members cm
+       JOIN users u ON cm.user_id = u.id
+       ORDER BY cm.category_id ASC, cm.role_in_space DESC, u.full_name ASC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "خطأ في السيرفر" });
+  }
+}
+
 module.exports = {
+  getAllCategoryMembers,
   getCategoryMembers,
   addCategoryMember,
   removeCategoryMember,
